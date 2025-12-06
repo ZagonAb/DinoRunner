@@ -392,7 +392,6 @@ Item {
             }
         }
 
-        // Meteorito
         Item {
             id: meteorItem
             width: 90 * vpx
@@ -967,7 +966,6 @@ Item {
             var dinoTop = ground.y - dinoContainer.height - dinoContainer.anchors.bottomMargin
             var dinoBottom = ground.y - dinoContainer.anchors.bottomMargin
 
-            // Colisión con cactus (solo si no está saltando)
             if (!isJumping) {
                 for (var i = 0; i < obstacleRepeater.count; i++) {
                     var obstacle = obstacleRepeater.itemAt(i)
@@ -988,7 +986,6 @@ Item {
                 }
             }
 
-            // Colisión con meteorito (solo si NO está agachado)
             if (meteorActive && !isDucking) {
                 var meteorLeft = meteorX
                 var meteorRight = meteorX + meteorItem.width
@@ -1030,7 +1027,6 @@ Item {
     function checkSpawnMeteor() {
         if (!gameRunning || meteorActive || score < 25) return
 
-            // Verificar que no haya cactus cerca
             var hasNearbyObstacle = false
             for (var i = 0; i < obstacleRepeater.count; i++) {
                 var obstacle = obstacleRepeater.itemAt(i)
@@ -1045,7 +1041,6 @@ Item {
 
             if (!hasNearbyObstacle) {
                 var spawnChance = Math.random()
-                // Aumenté la probabilidad para que sea más fácil de ver
                 if (spawnChance < 0.015) {
                     meteorActive = true
                     meteorX = root.width + 100 * vpx

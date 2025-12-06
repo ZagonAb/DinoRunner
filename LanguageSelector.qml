@@ -1,4 +1,3 @@
-// LanguageSelector.qml
 import QtQuick 2.15
 import QtGraphicalEffects 1.12
 
@@ -8,7 +7,6 @@ Rectangle {
     color: "#E6000000"
     z: 100
 
-    // Añadir esta propiedad para recibir el valor de root.vpx
     property real vpx: 1.0
     property bool languageSelected: false
     property int selectedIndex: 0
