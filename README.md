@@ -2,7 +2,7 @@
 
 A recreation of the classic offline dinosaur game for Chrome, developed in QML for Pegasus Frontend.
 
-![Screenshot 1](https://github.com/ZagonAb/DinoRunner/blob/d30d38f3a1d3fa67c1cc837aec5ca93b18d46395/.meta/screenshots/screen0.png)
+![Screenshot 1](https://github.com/ZagonAb/DinoRunner/blob/3cfb6ab6ffb195c12b1e9c764dac59acd3bd79ef/.meta/screenshots/screen0.png)
 ![Screenshot 2](https://github.com/ZagonAb/DinoRunner/blob/d30d38f3a1d3fa67c1cc837aec5ca93b18d46395/.meta/screenshots/screen1.png)
 
 ## Pegasus Interface Installation
