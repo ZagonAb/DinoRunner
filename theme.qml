@@ -41,6 +41,16 @@ Item {
     property int meteorCurrentFrame: 0
     property real meteorSpeedMultiplier: 1.8
 
+    property bool dragonActive: false
+    property real dragonX: root.width + 150 * vpx
+    property real dragonY: 130 * vpx
+    property int dragonCurrentFrame: 0
+    property real dragonSpeed: 0.1 * vpx
+    property int lastDragonScore: 0
+    property var dragonPath: []
+    property int dragonPathIndex: 0
+    property real dragonPathProgress: 0
+
     Translations {
         id: translations
         currentLanguage: root.currentLanguage
@@ -121,6 +131,56 @@ Item {
             height: parent.height
             fillMode: Image.Stretch
             x: root.width * 3
+        }
+    }
+
+    Item {
+        id: dragonItem
+        width: 80 * vpx
+        height: 70 * vpx
+        x: dragonX
+        y: dragonY
+        visible: dragonActive
+        z: 5
+
+        Image {
+            source: "assets/image/dragon/dragon_1.png"
+            width: parent.width
+            height: parent.height
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            visible: dragonCurrentFrame === 0
+            mipmap: true
+        }
+
+        Image {
+            source: "assets/image/dragon/dragon_2.png"
+            width: parent.width
+            height: parent.height
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            visible: dragonCurrentFrame === 1
+            mipmap: true
+        }
+
+        Image {
+            source: "assets/image/dragon/dragon_3.png"
+            width: parent.width
+            height: parent.height
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            visible: dragonCurrentFrame === 2
+            mipmap: true
+        }
+
+        Image {
+            source: "assets/image/dragon/dragon_4.png"
+            width: parent.width
+            height: parent.height
+            fillMode: Image.PreserveAspectFit
+            anchors.centerIn: parent
+            visible: dragonCurrentFrame === 3
+            mipmap: true
         }
     }
 
@@ -709,9 +769,11 @@ Item {
         onTriggered: {
             updateObstacles()
             updateMeteor()
+            updateDragon()
             checkCollisions()
             checkSpawnNewObstacle()
             checkSpawnMeteor()
+            checkSpawnDragon()
         }
     }
 
@@ -752,6 +814,16 @@ Item {
         repeat: true
         onTriggered: {
             meteorCurrentFrame = (meteorCurrentFrame + 1) % 11
+        }
+    }
+
+    Timer {
+        id: dragonAnimationTimer
+        interval: 50
+        running: dragonActive
+        repeat: true
+        onTriggered: {
+            dragonCurrentFrame = (dragonCurrentFrame + 1) % 4
         }
     }
 
@@ -825,6 +897,12 @@ Item {
         meteorActive = false
         meteorX = root.width + 100 * vpx
         meteorCurrentFrame = 0
+
+        dragonActive = false
+        dragonX = root.width + 150 * vpx
+        dragonCurrentFrame = 0
+        lastDragonScore = 0
+        dragonPathProgress = 0
 
         for (var i = 0; i < obstacleRepeater.count; i++) {
             var obstacle = obstacleRepeater.itemAt(i)
@@ -1053,6 +1131,85 @@ Item {
                     meteorX = root.width + 100 * vpx
                     meteorCurrentFrame = 0
                     console.log("===== METEOR SPAWNED at score: " + score + " =====")
+                }
+            }
+    }
+
+    function generateDragonPath() {
+        dragonPath = []
+
+        var pathType = Math.floor(Math.random() * 4)
+        var startY = 80 * vpx + Math.random() * 120 * vpx
+        var amplitude = 100 * vpx + Math.random() * 150 * vpx
+        var totalDistance = root.width + 300 * vpx
+        var steps = 100
+
+        for (var i = 0; i <= steps; i++) {
+            var progress = i / steps
+            var x = root.width + 150 * vpx - (progress * totalDistance)
+            var y
+
+            switch(pathType) {
+                case 0:
+                    y = startY + Math.sin(progress * Math.PI * 4) * amplitude
+                    break
+                case 1:
+                    y = startY + Math.sin(progress * Math.PI * 3) * amplitude + (progress * 85 * vpx)
+                    break
+                case 2:
+                    y = startY + Math.sin(progress * Math.PI * 3) * amplitude - (progress * 80 * vpx)
+                    break
+                case 3:
+                    y = startY + Math.sin(progress * Math.PI * 5) * amplitude * (1 - progress * 0.3)
+                    break
+            }
+
+            y = Math.max(50 * vpx, Math.min(y, root.height - ground.height - 100 * vpx))
+
+            dragonPath.push({x: x, y: y})
+        }
+    }
+
+    function updateDragon() {
+        if (!gameRunning || !dragonActive) return
+
+            if (dragonPath.length === 0) return
+
+                dragonPathProgress += dragonSpeed / vpx
+
+                var currentIndex = Math.floor(dragonPathProgress)
+                var nextIndex = currentIndex + 1
+
+                if (currentIndex >= dragonPath.length - 1) {
+                    dragonActive = false
+                    dragonPathIndex = 0
+                    dragonPathProgress = 0
+                    dragonPath = []
+                    console.log("===== DRAGON LEFT SCREEN =====")
+                    return
+                }
+
+                var t = dragonPathProgress - currentIndex
+                var currentPoint = dragonPath[currentIndex]
+                var nextPoint = dragonPath[nextIndex]
+
+                dragonX = currentPoint.x + (nextPoint.x - currentPoint.x) * t
+                dragonY = currentPoint.y + (nextPoint.y - currentPoint.y) * t
+    }
+
+    function checkSpawnDragon() {
+        if (!gameRunning || dragonActive) return
+
+            if (score >= 60 && (score - lastDragonScore) >= 60) {
+                var spawnChance = Math.random()
+                if (spawnChance < 0.3) {
+                    dragonActive = true
+                    dragonCurrentFrame = 0
+                    dragonPathIndex = 0
+                    dragonPathProgress = 0
+                    lastDragonScore = score
+                    generateDragonPath()
+                    console.log("===== DRAGON SPAWNED at score: " + score + " =====")
                 }
             }
     }
