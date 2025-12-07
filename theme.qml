@@ -39,6 +39,7 @@ Item {
     property bool meteorActive: false
     property real meteorX: root.width + 100 * vpx
     property int meteorCurrentFrame: 0
+    property real meteorSpeedMultiplier: 1.8
 
     Translations {
         id: translations
@@ -398,7 +399,7 @@ Item {
             height: 90 * vpx
             x: meteorX
             anchors.bottom: parent.bottom
-            anchors.bottomMargin: 120 * vpx
+            anchors.bottomMargin: 50 * vpx
             visible: meteorActive
             z: 16
 
@@ -961,6 +962,7 @@ Item {
 
     function checkCollisions() {
         if (!gameRunning) return
+
             var dinoLeft = dinoContainer.x
             var dinoRight = dinoContainer.x + dinoContainer.width
             var dinoTop = ground.y - dinoContainer.height - dinoContainer.anchors.bottomMargin
@@ -992,12 +994,17 @@ Item {
                 var meteorTopY = ground.y - meteorItem.anchors.bottomMargin - meteorItem.height
                 var meteorBottomY = ground.y - meteorItem.anchors.bottomMargin
 
-                var meteorHorizontalCollision = (dinoRight > meteorLeft + 20 * vpx) && (dinoLeft < meteorRight - 20 * vpx)
-                var meteorVerticalCollision = (dinoTop < meteorBottomY - 10 * vpx)
+                var meteorHorizontalCollision = (dinoRight > meteorLeft + 30 * vpx) &&
+                (dinoLeft < meteorRight - 30 * vpx)
+
+                var meteorVerticalCollision = (dinoBottom > meteorTopY + 20 * vpx) &&
+                (dinoTop < meteorBottomY - 20 * vpx)
 
                 if (meteorHorizontalCollision && meteorVerticalCollision) {
                     gameOver()
                     console.log("===== COLLISION WITH METEOR! =====")
+                    console.log("Dino Top: " + dinoTop + ", Dino Bottom: " + dinoBottom)
+                    console.log("Meteor Top: " + meteorTopY + ", Meteor Bottom: " + meteorBottomY)
                     return
                 }
             }
@@ -1017,7 +1024,7 @@ Item {
 
     function updateMeteor() {
         if (!gameRunning || !meteorActive) return
-            meteorX -= currentObstacleSpeed * 1.2
+            meteorX -= currentObstacleSpeed * meteorSpeedMultiplier
             if (meteorX < -meteorItem.width - 50 * vpx) {
                 meteorActive = false
                 meteorX = root.width + 100 * vpx
