@@ -29,12 +29,20 @@ Item {
     property real maxObstacleGap: 900 * vpx
     property real lastObstacleX: 0
     property int activeObstacles: 0
-    property real groundTop: 0
+
+    readonly property real groundTop: height - (60 * vpx)
     property real mountainSpeed: 0.3 * vpx
 
     property bool languageSelected: false
     property string currentLanguage: "en"
     property bool showLoadingSpinner: false
+
+    property real _savedWidth: 1280
+    property real _savedHeight: 720
+    property bool _rescalePending: false
+
+    onWidthChanged:  _scheduleRescale()
+    onHeightChanged: _scheduleRescale()
 
     property bool meteorActive: false
     property real meteorX: root.width + 100 * vpx
@@ -84,6 +92,14 @@ Item {
         id: dieSound
         source: "assets/sound/die.wav"
         volume: 0.3
+    }
+
+    Audio {
+        id: backgroundMusic
+        source: "assets/sound/background.wav"
+        volume: 0.07
+        loops: Audio.Infinite
+        autoPlay: false
     }
 
     Rectangle {
@@ -190,9 +206,6 @@ Item {
         height: 60 * vpx
         color: "transparent"
         anchors.bottom: parent.bottom
-        Component.onCompleted: {
-            root.groundTop = root.height - height
-        }
     }
 
     Item {
@@ -827,6 +840,69 @@ Item {
         }
     }
 
+    function _scheduleRescale() {
+        if (!_rescalePending && (width !== _savedWidth || height !== _savedHeight)) {
+            _rescalePending = true
+            Qt.callLater(_doRescale)
+        }
+    }
+
+    function _doRescale() {
+        _rescalePending = false
+        if (_savedWidth <= 0 || _savedHeight <= 0) {
+            _savedWidth = width
+            _savedHeight = height
+            return
+        }
+
+        var wRatio = width  / _savedWidth
+        var hRatio = height / _savedHeight
+
+        meteorX              = meteorX              * wRatio
+        dragonX              = dragonX              * wRatio
+        lastObstacleX        = lastObstacleX        * wRatio
+        groundVisual.x       = groundVisual.x       * wRatio
+        mountainsContainer.x = mountainsContainer.x * wRatio
+
+        dragonY = dragonY * hRatio
+        dinoContainer.anchors.bottomMargin = dinoContainer.anchors.bottomMargin * hRatio
+
+        if (!isDucking) {
+            dinoContainer.height = 70 * vpx
+        } else {
+            dinoContainer.height = 50 * vpx
+        }
+
+        currentObstacleSpeed = obstacleBaseSpeed * gameSpeed
+        mountainSpeed        = 0.3 * gameSpeed * vpx
+
+        minObstacleGap = minObstacleGap * wRatio
+        maxObstacleGap = maxObstacleGap * wRatio
+
+        for (var i = 0; i < obstacleRepeater.count; i++) {
+            var obs = obstacleRepeater.itemAt(i)
+            if (obs) {
+                obs.x              = obs.x             * wRatio
+                obs.width          = obs.width         * hRatio
+                obs.height         = obs.height        * hRatio
+                obs.obstacleWidth  = obs.obstacleWidth * hRatio
+                obs.obstacleHeight = obs.obstacleHeight * hRatio
+            }
+        }
+
+        if (dragonPath.length > 0) {
+            var newPath = []
+            for (var j = 0; j < dragonPath.length; j++) {
+                newPath.push({ x: dragonPath[j].x * wRatio,
+                    y: dragonPath[j].y * hRatio })
+            }
+            dragonPath = newPath
+        }
+
+        _savedWidth  = width
+        _savedHeight = height
+    }
+
     function playCoinSound() {
         if (coinSound && coinSound.source) {
             console.log(translations.t("coinObtained") + score)
@@ -894,6 +970,10 @@ Item {
         dinoContainer.dinoState = "running"
         dinoContainer.currentFrame = 0
 
+        if (backgroundMusic.source != "") {
+            backgroundMusic.play()
+        }
+
         meteorActive = false
         meteorX = root.width + 100 * vpx
         meteorCurrentFrame = 0
@@ -916,10 +996,27 @@ Item {
         spawnNewObstacle()
     }
 
+    function pauseBackgroundMusic() {
+        if (backgroundMusic.playbackState === Audio.PlayingState) {
+            backgroundMusic.pause()
+        }
+    }
+
+    function resumeBackgroundMusic() {
+        if (backgroundMusic.playbackState === Audio.PausedState) {
+            backgroundMusic.play()
+        }
+    }
+
     function gameOver() {
         gameRunning = false
         duckTimer.stop()
         playDieSound()
+
+        if (backgroundMusic.playbackState === Audio.PlayingState) {
+            backgroundMusic.stop()
+        }
+
         dinoContainer.dinoState = "dead"
 
         if (score > highScore) {
@@ -1272,6 +1369,8 @@ Item {
         console.log("=== DINO RUNNER - Language System ===")
         console.log("Screen size: " + width + "x" + height)
         console.log("Language selector will be shown on every startup")
+        _savedWidth  = width
+        _savedHeight = height
         languageSelected = false
         dinoContainer.dinoState = "idle"
     }
